@@ -1,6 +1,7 @@
 package set1
 
 import (
+	"bufio"
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
@@ -25,6 +26,7 @@ func Challenge1() {
 }
 
 func Challenge2() {
+	utils.Header("Fixed XOR")
 	msg := "1c0111001f010100061a024b53535009181c"
 	key := "686974207468652062756c6c277320657965"
 	expected := "746865206b696420646f6e277420706c6179"
@@ -54,6 +56,7 @@ func Challenge2() {
 }
 
 func Challenge3() {
+	utils.Header("Single-byte XOR cipher")
 	ciphertext := "1b37373331363f78151b7f2b783431333d78397828372d363c78373e783a393b3736"
 
 	cipherBytes, err := hex.DecodeString(ciphertext)
@@ -95,31 +98,6 @@ func Challenge3() {
 	}
 
 	// have scored list; sort and display
-	// // add uppercase & lowercase to list
-	// decoded := make([]byte, len(cipherBytes))
-	// for i := 0; i < 26; i++ {
-	// 	upper := byte(65 + i)
-	// 	lower := byte(97 + i)
-
-	// 	for i, b := range cipherBytes {
-	// 		decoded[i] = b ^ upper
-	// 	}
-	// 	new := item{
-	// 		key:     upper,
-	// 		decoded: decoded,
-	// 	}
-	// 	items = append(items, new)
-
-	// 	for i, b := range cipherBytes {
-	// 		decoded[i] = b ^ lower
-	// 	}
-	// 	new = item{
-	// 		key:     lower,
-	// 		decoded: decoded,
-	// 	}
-	// 	items = append(items, new)
-	// }
-
 	sort.Slice(items, func(i, j int) bool {
 		return items[i].score > items[j].score
 	})
@@ -135,7 +113,38 @@ func Challenge3() {
 }
 
 func Challenge4() {
-	fmt.Println("4")
+	utils.Header("Detect single-character XOR")
+	// file is list of fixed-length strings of 60 chars
+	// one of them was encrypted by a single char xor, gotta find it
+	fileName := "set1Challenge4.txt"
+	fileURL := "https://cryptopals.com/static/challenge-data/4.txt"
+
+	file := utils.GetCachedFile(fileName, fileURL)
+	defer file.Close()
+
+	// this could be a struct again, but ehh
+	bestScore := -1
+	bestOutput := ""
+	bestKey := ""
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		key, score, output := utils.GetBestScore(line)
+		fmt.Printf("%d : %s\n", score, output)
+		if score > bestScore {
+			bestScore = score
+			bestOutput = output
+			bestKey = string(key)
+		}
+	}
+
+	// 1st run: total garbage coming out
+	// 		Possible help:
+	//          https://stackoverflow.com/questions/52969757/stuck-on-cryptopals-challenge-4-in-go
+	//			https://crypto.stackexchange.com/questions/30209/developing-algorithm-for-detecting-plain-text-via-frequency-analysis
+	fmt.Println("**** Top Answer ****")
+	fmt.Printf("%s:%d - %s\n", bestKey, bestScore, bestOutput)
 }
 
 func Challenge5() {

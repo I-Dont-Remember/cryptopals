@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"sort"
 	"strings"
 )
 
@@ -124,11 +125,58 @@ func GetCachedFile(fileName, fileURL string) *os.File {
 	} else {
 		file, err = os.Open(fileName)
 		Check(err)
-
-		defer file.Close()
 	}
 
 	fmt.Println(file.Name())
 	return file
+
+}
+
+func GetBestScore(ciphertext string) (byte, int, string) {
+	// Stolen from Challenge 3
+	cipherBytes, err := hex.DecodeString(ciphertext)
+	Check(err)
+
+	// for each letter in the alphabet, have to decrypt byte
+	// A - Z 65 - 90
+	// a - z 97 - 122
+
+	type item struct {
+		score   int
+		key     byte
+		decoded []byte
+	}
+
+	xor := func(k byte) item {
+		decoded := make([]byte, len(cipherBytes))
+		for i, b := range cipherBytes {
+			decoded[i] = b ^ k
+		}
+
+		score := EnglishScore(string(decoded))
+		return item{
+			score:   score,
+			key:     k,
+			decoded: decoded,
+		}
+	}
+
+	var items []item
+
+	// add uppercase & lowercase to list
+	for i := 0; i < 26; i++ {
+		upper := byte(65 + i)
+		lower := byte(97 + i)
+
+		items = append(items, xor(upper))
+		items = append(items, xor(lower))
+	}
+
+	// have scored list; sort and display
+	sort.Slice(items, func(i, j int) bool {
+		return items[i].score > items[j].score
+	})
+
+	return items[0].key, items[0].score, string(items[0].decoded)
 
 }
